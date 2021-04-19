@@ -67,6 +67,8 @@ int main()
 	slide_show.init();
 
 	path data_dir = GetFolderOpen();
+	if (data_dir.empty())
+		return 0;
 	refresh_directory_index(data_dir);
 	load_images();
 
@@ -118,12 +120,20 @@ void toggle_fullscreen()
 
 	if (fullscreen) {
 		GetWindowRect(mainWindow, &minRect);
+		// Get fullscreen monitor info
+		HMONITOR mon = MonitorFromWindow(mainWindow, MONITOR_DEFAULTTOPRIMARY);
+		MONITORINFO mnfo; mnfo.cbSize = sizeof(mnfo);
+		GetMonitorInfo(mon, &mnfo);
+
 		SetWindowLongPtr(mainWindow, GWL_STYLE, WS_SYSMENU | WS_POPUP | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE);
-		MoveWindow(mainWindow, 0, 0, 1920, 1080, TRUE);
-		// FIXME assumes the monitor is 1920x1080 16:9
+		int x = mnfo.rcMonitor.left;
+		int y = mnfo.rcMonitor.top;
+		int width = mnfo.rcMonitor.right - x;
+		int height = mnfo.rcMonitor.bottom - y;
+		MoveWindow(mainWindow, x, y, width, height, TRUE);
 	}
 	else {
-		SetWindowLongPtr(mainWindow, GWL_STYLE, WS_OVERLAPPED | WS_VISIBLE);
+		SetWindowLongPtr(mainWindow, GWL_STYLE, WS_VISIBLE | WS_OVERLAPPEDWINDOW);
 		MoveWindow(mainWindow, minRect.left, minRect.top, minRect.right - minRect.left, minRect.bottom - minRect.top, TRUE);
 	}
 }
@@ -296,6 +306,11 @@ LRESULT CALLBACK win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 void set_directory(const path& dir)
 {
+	if (dir.empty()) {
+		assert(false && "Directory empty");
+		return;
+	}
+
 	current_dir = dir;
 	refresh_directory_index(dir);
 	// watch the directory
