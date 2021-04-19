@@ -270,7 +270,7 @@ public:
 				return;
 		}
 		index = 0;
-		while (++index < start) {
+		while (++index <= start) {
 			if (image_list[index].raw.tex_name != 0)
 				return;
 		}
